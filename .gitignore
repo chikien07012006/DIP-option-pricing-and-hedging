@@ -1,0 +1,40 @@
+# Python bytecode and tooling
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Virtual environments and local configuration
+.venv/
+venv/
+env/
+.env
+.env.*
+!.env.example
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Generated data, experiment outputs, and model checkpoints
+data/raw/
+data/processed/
+artifacts/
+models/
+checkpoints/
+runs/
+tensorboard/
+wandb/
+mlruns/
+*.pt
+*.pth
+*.ckpt
+
+# OS and editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

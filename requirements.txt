@@ -1,0 +1,21 @@
+# Numerical computing and data handling
+numpy>=1.26
+pandas>=2.1
+scipy>=1.11
+
+# Visualisation
+matplotlib>=3.8
+seaborn>=0.13
+
+# Machine learning
+scikit-learn>=1.4
+torch>=2.2
+
+# Reinforcement learning
+gymnasium>=0.29
+stable-baselines3>=2.3
+
+# Notebooks and testing
+jupyterlab>=4.1
+ipykernel>=6.29
+pytest>=8.0
