@@ -1,0 +1,133 @@
+
+# ==========================================
+# Down-and-In Put (DIP) - Pricing Configuration
+# ==========================================
+contract:
+  type: "down_and_in_put"
+  exercise_type: "european"
+
+  # Option parameters
+  spot_price: 100.0
+  strike_price: 100.0
+  barrier_level: 85.0
+
+  # Contract maturity
+  maturity: 0.25             # Years (3 months)
+
+  # Barrier monitoring
+  monitoring_type: "discrete"
+  monitoring_frequency: "daily"
+  monitoring_steps: 63
+
+  # Dividend yield
+  dividend_yield: 0.0
+
+
+# ==========================================
+# Market Assumptions
+# ==========================================
+
+market:
+  risk_free_rate: 0.03       # 3% annualized
+  volatility: 0.30           # 30% annualized
+
+  # Real-world drift for hedging simulations
+  expected_return: 0.03      # 3% annualized
+
+  # Pricing measure: risk-neutral Q
+  pricing_measure: "risk_neutral"
+
+  # Hedging simulation measure: real-world P
+  hedging_measure: "real_world"
+
+
+# ==========================================
+# Analytical Pricing
+# ==========================================
+
+analytical:
+  model: "black_scholes_barrier"
+  formula: "reiner_rubinstein"
+
+  # Continuous-monitoring formula adjusted for
+  # discrete daily barrier monitoring
+  continuity_correction:
+    enabled: true
+    method: "broadie_glasserman_kou"
+    beta: 0.5826
+
+
+# ==========================================
+# Monte Carlo Pricing
+# ==========================================
+
+monte_carlo:
+  num_simulations: 100000
+  random_seed: 42
+
+  variance_reduction:
+    antithetic_variates: true
+
+  confidence_level: 0.95
+
+
+# ==========================================
+# Neural Network Pricing
+# ==========================================
+
+neural_network:
+  enabled: true
+
+  dataset:
+    train_size: 100000
+    validation_size: 20000
+    test_size: 20000
+    sampling_method: "sobol"
+
+    parameter_ranges:
+      spot_price: [80.0, 120.0]
+      strike_price: [80.0, 120.0]
+      barrier_to_spot_ratio: [0.65, 0.95]
+      maturity: [0.1, 2.0]
+      volatility: [0.10, 0.50]
+      risk_free_rate: [0.00, 0.10]
+
+    # Enforce S0 > H and H < K
+    constraints:
+      barrier_below_spot: true
+      barrier_below_strike: true
+
+  preprocessing:
+    normalize_inputs: true
+    normalize_target: true
+
+  architecture:
+    input_dim: 5
+    hidden_layers: [128, 128, 64]
+    output_dim: 1
+    activation: "relu"
+
+  training:
+    optimizer: "adam"
+    learning_rate: 0.001
+    batch_size: 256
+    epochs: 200
+    loss: "mse"
+    early_stopping: true
+    patience: 15
+    random_seed: 42
+
+
+# ==========================================
+# Evaluation
+# ==========================================
+
+evaluation:
+  metrics:
+    - "mae"
+    - "rmse"
+    - "mean_relative_error"
+    - "runtime"
+
+  save_predictions: true
+  save_figures: true

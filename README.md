@@ -1,58 +1,96 @@
-# Computational Pricing and Dynamic Hedging of a Down-and-In Put
+# Down-and-In Put Pricing and Dynamic Hedging
 
-This repository implements pricing and dynamic hedging workflows for a down-and-in European put (DIP). It compares closed-form Black--Scholes pricing, simulation-based pricing, and learning-based methods, then evaluates their hedging performance under realistic trading frictions.
+A research-oriented Python project for pricing and dynamically hedging a down-and-in European put (DIP). The repository combines a closed-form barrier-option benchmark, Monte Carlo simulation, neural-network pricing, and reinforcement-learning hedging in one reproducible workflow.
 
-## Product
+## What this repository does
 
-The option has strike `K`, lower barrier `H < K`, and maturity `T`. Its payoff is activated only when the underlying price reaches or falls below the barrier at an observation date:
+- Simulates underlying-price paths with Geometric Brownian Motion (GBM).
+- Prices a down-and-in put with a closed-form Black--Scholes / Reiner--Rubinstein benchmark.
+- Estimates prices with standard Monte Carlo and antithetic variates.
+- Trains an MLP pricing surrogate on synthetically generated contracts.
+- Compares analytical-Delta, Monte-Carlo-Delta, and PPO-based dynamic hedging.
+- Evaluates hedging error, tail risk, turnover, and transaction costs under different market scenarios.
 
-`payoff = max(K - S_T, 0) × 1{min(S_t) ≤ H}`
+## Down-and-in put
 
-The baseline model assumes that the underlying follows a Geometric Brownian Motion. Pricing uses the risk-neutral measure, while hedging experiments simulate paths under the real-world measure.
+The option has strike `K`, lower barrier `H < K`, and maturity `T`. It becomes active only when the underlying price reaches or falls below `H` at least once before maturity. Its payoff is
 
-## Methods
+`max(K - S_T, 0) × 1{min(S_t) ≤ H}`
+
+The simulation model assumes that the underlying follows GBM:
+
+`dS_t = μ S_t dt + σ S_t dW_t`
+
+Pricing uses risk-neutral drift `r`; hedging experiments can instead use the real-world drift `μ`.
+
+## GBM simulation
+
+The currently implemented simulator generates exact discrete GBM paths and saves the visualisation below. The dashed red line is the down barrier; a path crossing it activates the option.
+
+![Simulated GBM paths and down barrier](results/figures/gbm_simulation.png)
+
+Run the simulation and regenerate the figure with:
+
+```bash
+python -m stock_simulation.visualize
+```
+
+## Methodology
 
 ### Pricing
 
-- **Closed-form Black--Scholes / Reiner--Rubinstein formula:** the analytical benchmark for the barrier option.
-- **Monte Carlo:** simulates GBM paths and checks the barrier condition path by path.
-- **Monte Carlo with Antithetic Variates:** pairs shocks `Z` and `-Z` to reduce estimator variance.
-- **MLP neural network:** learns the pricing function from synthetic data with normalized inputs `(K/S0, H/S0, T, sigma, r)`.
+| Method | Purpose |
+| --- | --- |
+| Closed-form Black--Scholes / Reiner--Rubinstein | Analytical pricing benchmark for the barrier option. |
+| Standard Monte Carlo | Estimates the discounted expected payoff from simulated paths. |
+| Antithetic variates | Reduces Monte Carlo estimator variance by pairing shocks `Z` and `-Z`. |
+| MLP regressor | Approximates prices from normalized contract and market features. |
 
 ### Dynamic hedging
 
-Three strategies are evaluated on identical price paths within the same self-financing accounting framework:
+All hedgers share the same simulated paths and self-financing cash-account convention.
 
-1. Analytical Delta, using finite differences before barrier activation and Black--Scholes put Delta afterward.
-2. Monte Carlo Delta estimated with finite differences and **Common Random Numbers**.
-3. PPO reinforcement learning, where an agent applies a continuous adjustment to the analytical Delta while accounting for its previous position and transaction costs.
+1. **Analytical Delta:** finite-difference Delta for the barrier option before activation, then Black--Scholes put Delta after activation.
+2. **Monte Carlo Delta:** finite-difference Delta with Common Random Numbers for a lower-variance bump-and-revalue estimate.
+3. **PPO hedger:** a reinforcement-learning policy that adjusts the analytical Delta while accounting for its previous position and transaction costs.
 
-Experiments examine the effects of rebalancing frequency, transaction costs, and volatility misspecification.
+## Baseline experiment
 
-## Evaluation metrics
-
-- **Pricing:** MAE, RMSE, relative error, confidence intervals, variance-reduction ratio, and runtime.
-- **Hedging:** mean P&L, standard deviation, P&L MAE/RMSE, quantiles, 5% CVaR, turnover, transaction costs, and hedging effectiveness.
-
-## Baseline configuration
+The default pricing configuration is in [`configs/pricing.yaml`](configs/pricing.yaml).
 
 | Parameter | Value |
 | --- | ---: |
-| Spot / strike / barrier | 100 / 100 / 85 |
-| Maturity / observation dates | 3 months / 63 |
+| Initial spot / strike / barrier | 100 / 100 / 85 |
+| Maturity | 0.25 years (3 months) |
+| Monitoring dates | 63 daily observations |
 | Volatility / risk-free rate | 30% / 3% |
 | Real-world drift | 3% |
-| Transaction cost | 0, 0.1%, 0.5%, 1% |
+| Transaction-cost scenarios | 0, 0.1%, 0.5%, 1% |
+
+## Evaluation
+
+Pricing methods are assessed with MAE, RMSE, relative error, confidence intervals, estimator variance, and runtime. Hedging strategies are compared using terminal P&L, P&L dispersion, quantiles, 5% CVaR, transaction costs, turnover, and hedging effectiveness.
+
+## Project layout
+
+```text
+configs/             # Pricing, hedging, and PPO experiment settings
+pricing/             # Analytical, Monte Carlo, and neural-network pricing modules
+stock_simulation/    # GBM path generator and plotting utility
+results/figures/     # Generated charts, including the GBM simulation
+data/                # Local generated datasets (not committed)
+plan.md              # Implementation roadmap
+```
 
 ## Installation
 
-Python 3.10 or later is required.
+Python 3.10 or newer is required.
 
 ```bash
 python -m venv .venv
-source .venv/bin/activate  # Windows PowerShell: .venv\Scripts\Activate.ps1
-python -m pip install -U pip
+source .venv/bin/activate       # Windows PowerShell: .venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-See [plan.md](plan.md) for the implementation roadmap.
+See [plan.md](plan.md) for the implementation roadmap and validation criteria.
