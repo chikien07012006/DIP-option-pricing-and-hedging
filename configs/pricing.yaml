@@ -14,7 +14,7 @@ contract:
   # Contract maturity
   maturity: 0.25             # Years (3 months)
 
-  # Barrier monitoring
+  # Monte Carlo barrier monitoring
   monitoring_type: "discrete"
   monitoring_frequency: "daily"
   monitoring_steps: 63
@@ -48,13 +48,9 @@ market:
 analytical:
   model: "black_scholes_barrier"
   formula: "reiner_rubinstein"
-
-  # Continuous-monitoring formula adjusted for
-  # discrete daily barrier monitoring
-  continuity_correction:
-    enabled: true
-    method: "broadie_glasserman_kou"
-    beta: 0.5826
+  barrier_monitoring: "continuous"
+  # The analytical price is a continuous-monitoring benchmark.
+  # No continuity correction is applied.
 
 
 # ==========================================
@@ -62,11 +58,15 @@ analytical:
 # ==========================================
 
 monte_carlo:
-  num_simulations: 100000
   random_seed: 42
+  barrier_monitoring: "discrete_daily"
 
-  variance_reduction:
-    antithetic_variates: true
+  standard:
+    num_simulations: 100000
+
+  antithetic_variates:
+    # 50,000 pairs = 100,000 simulated paths, matching the standard-MC budget.
+    num_pairs: 50000
 
   confidence_level: 0.95
 
