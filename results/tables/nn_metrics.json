@@ -1,0 +1,30 @@
+{
+  "train": {
+    "n": 100000,
+    "mae": 0.030832460150122643,
+    "rmse": 0.0416451171040535,
+    "max_abs_error": 0.5916709899902344,
+    "mean_relative_error(price>0.1)": 0.011581175960600376,
+    "negative_predictions": 2794
+  },
+  "validation": {
+    "n": 20000,
+    "mae": 0.03228761628270149,
+    "rmse": 0.044209107756614685,
+    "max_abs_error": 0.5348284244537354,
+    "mean_relative_error(price>0.1)": 0.012150884605944157,
+    "negative_predictions": 548
+  },
+  "test": {
+    "n": 20000,
+    "mae": 0.032244421541690826,
+    "rmse": 0.044547781348228455,
+    "max_abs_error": 0.6915388107299805,
+    "mean_relative_error(price>0.1)": 0.011832079850137234,
+    "negative_predictions": 582
+  },
+  "best_epoch": 74,
+  "epochs_run": 89,
+  "training_seconds": 23.59440445713699,
+  "inference_microseconds_per_contract": 0.16778544522821903
+}

@@ -82,7 +82,7 @@ neural_network:
     train_size: 100000
     validation_size: 20000
     test_size: 20000
-    sampling_method: "sobol"
+    sampling_method: "latin_hypercube"
 
     parameter_ranges:
       spot_price: [80.0, 120.0]
@@ -99,10 +99,10 @@ neural_network:
 
   preprocessing:
     normalize_inputs: true
-    normalize_target: true
+    normalize_target: false     # predict the raw analytical price
 
   architecture:
-    input_dim: 5
+    input_dim: 6                # S, K, H/S, T, sigma, r (barrier_level dropped)
     hidden_layers: [128, 128, 64]
     output_dim: 1
     activation: "relu"

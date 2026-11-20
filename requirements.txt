@@ -19,3 +19,6 @@ stable-baselines3>=2.3
 jupyterlab>=4.1
 ipykernel>=6.29
 pytest>=8.0
+
+# Configuration
+pyyaml>=6.0

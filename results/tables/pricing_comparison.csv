@@ -1,0 +1,5 @@
+method,barrier_monitoring,price,reference,reference_price,bias,abs_relative_error,estimator_variance,runtime_seconds,num_paths,std_error,ci95_lower,ci95_upper,ci95_width,ci_contains_reference,per_sample_variance,per_sample_unit,vrr_vs_standard,efficiency_ratio_vs_standard
+Reiner-Rubinstein (closed form),continuous,4.2621573,RR (itself),4.2621573,0,0,0,2.8176457e-06,,,,,,,,,,
+Standard Monte Carlo,discrete daily,3.9853601,RR,4.2621573,-0.27679722,0.064942984,0.00061979403,3.0660461,100000,0.024895663,3.9365655,4.0341547,0.097589205,False,61.979403,path,1,1
+Monte Carlo antithetic variates,discrete daily,3.9851893,RR,4.2621573,-0.27696808,0.064983072,0.00045996355,2.3324658,100000,0.021446761,3.9431544,4.0272241,0.084069758,False,22.998177,pair average,1.3474851,1.7712807
+Neural network (MLP),continuous (learned),4.2991452,RR,4.2621573,0.036987888,0.008678208,,2.4510416e-05,,,,,,,,,,

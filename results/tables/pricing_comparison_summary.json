@@ -1,0 +1,19 @@
+{
+  "contract": {
+    "S": 100.0,
+    "K": 100.0,
+    "H": 85.0,
+    "T": 0.25,
+    "r": 0.03,
+    "sigma": 0.3,
+    "monitoring_steps": 63
+  },
+  "reiner_rubinstein_continuous": 4.262157333666851,
+  "variance_reduction_ratio": 1.347485093770522,
+  "implied_pair_correlation": -0.2578767627018359,
+  "std_error_reduction_factor": 1.1608122560390728,
+  "efficiency_ratio": 1.7712806502311655,
+  "paths_standard_mc_needs_to_match_av": 134749,
+  "nn_speedup_vs_standard_mc": 125091.55699177505,
+  "z_critical": 1.959963984540054
+}
