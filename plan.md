@@ -39,19 +39,28 @@ Build a reproducible workflow for pricing and dynamically hedging a down-and-in 
 - Inputs: `spot_price, strike_price, barrier_to_spot_ratio, time_to_maturity, volatility, risk_free_rate`. `barrier_level` is dropped because it equals `spot_price × barrier_to_spot_ratio`.
 - Inputs are standardised with train-set mean and standard deviation; the target is the raw analytical price, with no target scaling.
 
-## Phase 3 — Classical dynamic hedging
+## Phase 3 — Classical dynamic hedging (in progress)
 
-- [ ] Vectorise Monte Carlo pricing so that bump-and-revalue Delta is feasible inside the hedging loop.
-- [ ] Implement self-financing portfolio accounting for stock holdings, cash, transaction costs, and terminal liquidation.
-- [ ] Mark the liability as a barrier option before activation and a vanilla put after activation.
-- [ ] Implement analytical Delta hedging with finite differences and daily rebalancing.
-- [ ] Implement Monte Carlo Delta hedging with Common Random Numbers.
-- [ ] Run paired strategy comparisons on the same real-world price paths.
-- [ ] Compare daily and weekly rebalancing.
-- [ ] Evaluate transaction-cost sensitivity at 0%, 0.1%, 0.5%, and 1%.
-- [ ] Evaluate volatility misspecification with true volatilities of 20% and 40% versus a 30% hedging model.
+- [x] Vectorise Monte Carlo pricing for bump-and-revalue Delta. Inner paths are simulated as growth factors `S_T = S·R_T`, `min S = S·min R` and shared across all hedge paths.
+- [x] Implement self-financing portfolio accounting for stock holdings, cash, transaction costs, and terminal liquidation (`hedging/portfolio.py`).
+- [x] Mark the liability as a barrier option before activation and a vanilla put after activation.
+- [x] Strategy 1: analytical Delta hedging with central finite differences of the closed form and daily rebalancing (`hedging/analytical_delta.py`).
+- [x] Strategy 2: Monte Carlo Delta hedging with Common Random Numbers (`hedging/mc_delta.py`).
+- [x] Run paired strategy comparisons on the same real-world price paths (`hedging/run_mc_hedge.py`).
+- [x] Evaluate transaction-cost sensitivity at 0%, 0.1%, 0.5%, and 1%.
+- [ ] Compare daily and weekly rebalancing (`rebalance_every: 5` in `configs/hedging.yaml`).
+- [ ] Evaluate volatility misspecification with true volatilities of 20% and 40% versus a 30% hedging model (`true_volatility`).
+- [ ] Repeat the MC-Delta run over several inner-path seeds before drawing conclusions on std/CVaR differences.
 
-**Deliverables:** terminal P&L distributions, transaction-cost and turnover summaries, CVaR/quantile statistics, and a pathwise hedge illustration for a barrier-hit path.
+**Delivered so far:** terminal P&L distributions, cost-sensitivity summaries, turnover, CVaR, a pathwise hedge illustration on a barrier-hit path, and the two-strategy comparison table (`results/tables/hedging_comparison.*`).
+
+**Decisions:**
+- The hedger is short one DIP and holds Δ shares, where Δ < 0 means a short stock position. The target is terminal P&L = 0 on every path.
+- Accounting: `Cash_0 = premium − Δ_0·S_0`, `Cash_t = Cash_{t−1}·e^{rΔt} − (Δ_t − Δ_{t−1})·S_t`, `P&L_T = Cash_T + Δ_T·S_T − payoff`. A proportional cost applies to every trade, including the initial position and the terminal liquidation.
+- 10,000 real-world GBM paths (μ = 3%, σ = 30%). Both strategies use the same premium: the Reiner--Rubinstein price, 4.2622.
+- Analytical Δ: central difference of the closed form, h = 1e-4·S, before knock-in; Black--Scholes put Δ after knock-in.
+- MC Δ: forward difference `[V(S+h) − V(S)]/h` with h = 1%·S. M = 5,000 fresh inner paths per date, with daily barrier monitoring. V(S) and V(S+h) use the same paths (CRN).
+- Metrics: mean P&L, std P&L, 5% CVaR, and turnover. MAE/RMSE are dropped because, with target 0, RMSE² = mean² + std².
 
 ## Phase 4 — PPO dynamic hedging
 
@@ -68,5 +77,5 @@ Build a reproducible workflow for pricing and dynamically hedging a down-and-in 
 
 - [ ] Use identical initial premiums, price paths, monitoring schedules, and accounting rules in all hedge comparisons.
 - [x] Report pricing accuracy, statistical efficiency, and runtime for every pricing method.
-- [ ] Report mean P&L, standard deviation, MAE/RMSE, 1%/5%/50%/95%/99% quantiles, 5% CVaR, turnover, and total transaction costs for every hedging strategy.
+- [ ] Report mean P&L, standard deviation, 5% CVaR, and turnover for every hedging strategy (done for strategies 1–2).
 - [ ] Keep negative results: PPO is an experimental extension and does not need to outperform classical Delta hedging for the project to be complete.

@@ -1,0 +1,25 @@
+{
+  "num_paths": 10000,
+  "premium": 4.262157333666851,
+  "barrier_hit_rate": 0.2516,
+  "inner_paths_per_date": 5000,
+  "bump_relative": 0.01,
+  "delta_seconds": {
+    "analytical": 3.272431207820773,
+    "mc": 17.531574917025864
+  },
+  "initial_delta": {
+    "analytical": -0.4485018453796119,
+    "mc": -0.4540724409516992
+  },
+  "mean_abs_delta_gap_mc_minus_analytical": 0.03902388690824067,
+  "paired_pnl_difference_mc_minus_analytical_tc_0": {
+    "mean": 0.01320984711119673,
+    "std": 1.2040801069137346,
+    "correlation": 0.6956787995886188
+  },
+  "variance_reduction_vs_unhedged": {
+    "analytical": 0.9595932075100889,
+    "mc": 0.9672913064249945
+  }
+}

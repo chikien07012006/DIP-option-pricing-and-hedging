@@ -52,10 +52,18 @@ The MLP (`6 → 128 → 128 → 64 → 1`, ReLU, linear output) is trained with 
 
 ### Dynamic hedging
 
-All hedgers share the same simulated paths and self-financing cash-account convention.
+The hedger sells one DIP, receives the premium, and holds Δ shares of the stock. Δ < 0, so the hedge is a short stock position. All hedgers share the same simulated real-world paths, the same premium, and the same self-financing accounting:
 
-1. **Analytical Delta:** finite-difference Delta for the barrier option before activation, then Black--Scholes put Delta after activation.
-2. **Monte Carlo Delta:** finite-difference Delta with Common Random Numbers for a lower-variance bump-and-revalue estimate.
+```text
+Cash_0 = premium − Δ_0·S_0 − cost_0
+Cash_t = Cash_{t−1}·e^{rΔt} − (Δ_t − Δ_{t−1})·S_t − cost_t
+P&L_T  = Cash_T + Δ_T·S_T − cost_T − payoff
+```
+
+`cost = transaction cost × |shares traded| × S`. The target is P&L = 0 on every path.
+
+1. **Analytical Delta:** a central finite difference of the closed-form DIP price before knock-in, then the Black--Scholes put Delta `N(d1) − 1` after knock-in.
+2. **Monte Carlo Delta (CRN):** a forward difference `[V(S+h) − V(S)]/h` with h = 1%·S. V is a Monte Carlo price with daily barrier monitoring over the remaining dates. Each date draws 5,000 fresh inner paths, and V(S) and V(S+h) reuse them (common random numbers). Because GBM is multiplicative, the inner paths are simulated once per date as growth factors and shared by all hedge paths.
 3. **PPO hedger:** a reinforcement-learning policy that adjusts the analytical Delta while accounting for its previous position and transaction costs.
 
 ## Baseline experiment
@@ -120,9 +128,45 @@ python -m pricing.compare_methods         # four-method comparison table
 
 Outputs are written to `results/tables/`, `results/figures/`, and `results/checkpoints/`.
 
+## Hedging results
+
+The setup has 10,000 real-world GBM paths (μ = 3%, σ = 30%), daily rebalancing over 63 dates, and a premium of 4.2622 (Reiner--Rubinstein). The barrier is hit on 25.2% of paths. Both strategies hedge the same paths. Turnover is the number of shares traded per path.
+
+| Strategy | Transaction cost | Mean P&L | Std P&L | CVaR 5% | Turnover (shares) |
+| --- | --- | --- | --- | --- | --- |
+| Unhedged | 0.0% | +0.2106 | 8.0213 | -22.6111 | 0.000 |
+| Analytical Δ | 0.0% | +0.2402 | 1.6124 | -2.8912 | 4.652 |
+| Analytical Δ | 0.1% | -0.2045 | 1.5775 | -3.7159 | 4.652 |
+| Analytical Δ | 0.5% | -1.9830 | 1.8896 | -7.5523 | 4.652 |
+| Analytical Δ | 1.0% | -4.2061 | 2.8910 | -13.0314 | 4.652 |
+| MC Δ (CRN) | 0.0% | +0.2534 | 1.4507 | -3.4765 | 4.585 |
+| MC Δ (CRN) | 0.1% | -0.1858 | 1.5047 | -4.3395 | 4.585 |
+| MC Δ (CRN) | 0.5% | -1.9424 | 2.0093 | -8.0281 | 4.585 |
+| MC Δ (CRN) | 1.0% | -4.1383 | 2.9677 | -12.9543 | 4.585 |
+
+- **Hedging works.** Both strategies remove about 96–97% of the unhedged P&L variance, and 5% CVaR improves from −22.6 to about −3.
+- **The mean P&L is positive (+0.24 to +0.25) without costs.** The premium is the continuous-monitoring price, but the contract is monitored daily. The seller keeps this monitoring gap, so the mean is not a hedging gain.
+- **Analytical vs MC Δ.** MC Δ is consistent with daily monitoring, so its Delta is less extreme near the barrier and std P&L is lower (1.45 vs 1.61). Its Monte Carlo noise (about ±0.025 per date) fattens the left tail, so CVaR is worse (−3.48 vs −2.89). With costs of 0.5% or more, MC std is higher. The two strategies have similar turnover, and MC Δ is about 5× slower (17.5 s vs 3.3 s for 10,000 paths). These differences come from a single inner-path seed.
+- **Transaction costs.** Each 0.1% of cost lowers mean P&L by about 0.44, which matches cost × turnover × S.
+
+![Terminal P&L distributions of the two hedging strategies](results/figures/hedging_comparison_pnl_hist.png)
+
+On a barrier-hit path, Delta falls well below −1 as the price approaches the barrier near maturity. The analytical Delta reaches −3.0 and the MC Delta −2.4. After knock-in, Delta jumps back to the vanilla-put Delta, about −1, so both hedgers buy back stock in one large trade. On this path, terminal P&L is +2.47 (analytical) and −0.84 (MC), against −11.61 unhedged.
+
+![Both hedging strategies on the same barrier-hit path](results/figures/hedging_comparison_path_example.png)
+
+### Reproducing the hedging results
+
+```bash
+python -m hedging.run_analytical_hedge   # strategy 1 only
+python -m hedging.run_mc_hedge           # strategy 2 + comparison with strategy 1
+```
+
+Settings are in [`configs/hedging.yaml`](configs/hedging.yaml).
+
 ## Evaluation
 
-Pricing methods are assessed with MAE, RMSE, relative error, confidence intervals, estimator variance, and runtime. Hedging strategies are compared using terminal P&L, P&L dispersion, quantiles, 5% CVaR, transaction costs, turnover, and hedging effectiveness.
+Pricing methods are assessed with MAE, RMSE, relative error, confidence intervals, estimator variance, and runtime. Hedging strategies are compared against the target P&L = 0 using mean P&L, std P&L, 5% CVaR (mean P&L of the worst 5% of paths), and turnover.
 
 ## Project layout
 
@@ -130,6 +174,7 @@ Pricing methods are assessed with MAE, RMSE, relative error, confidence interval
 configs/             # Pricing, hedging, and PPO experiment settings
 pricing/             # Analytical, Monte Carlo, and neural-network pricing modules,
                      # NN figures (nn_visualize.py) and method comparison (compare_methods.py)
+hedging/             # Self-financing accounting, analytical and MC Delta, experiment scripts
 stock_simulation/    # GBM path generator and plotting utility
 data/                # Dataset generation / split scripts and generated CSVs
 results/figures/     # Generated charts (GBM paths, NN learning curves and predictions)

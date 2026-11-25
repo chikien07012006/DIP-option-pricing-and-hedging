@@ -1,0 +1,10 @@
+{
+  "num_paths": 10000,
+  "premium": 4.262157333666851,
+  "barrier_hit_rate": 0.2516,
+  "drift": 0.03,
+  "true_volatility": 0.3,
+  "model_volatility": 0.3,
+  "rebalance_every": 1,
+  "variance_reduction_vs_unhedged_no_cost": 0.9595932075100889
+}

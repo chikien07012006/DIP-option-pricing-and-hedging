@@ -1,0 +1,32 @@
+# ==========================================
+# Dynamic Hedging Configuration
+# ==========================================
+# Contract (S0, K, H, T, monitoring steps) and market (r, mu) parameters are
+# read from configs/pricing.yaml so pricing and hedging stay consistent.
+# The hedger is short one down-and-in put and holds Delta shares of the stock.
+# Target: terminal P&L = 0 on every path (perfect replication).
+
+simulation:
+  num_paths: 10000
+  random_seed: 2026
+  # Real-world measure P: drift = market.expected_return in pricing.yaml
+  true_volatility: 0.30      # volatility of the simulated paths
+
+hedger:
+  model_volatility: 0.30     # volatility assumed by the hedger's pricing model
+  premium: "analytical"      # Reiner--Rubinstein price at t=0 under model_volatility
+  rebalance_every: 1         # monitoring steps between rebalances (1 = daily, 5 = weekly)
+  delta_bump_relative: 1.0e-4  # central finite-difference bump h = bump * S
+
+# Proportional cost on traded notional, applied to every trade
+# (initial position, rebalances, and terminal liquidation).
+transaction_costs: [0.0, 0.001, 0.005, 0.01]
+
+evaluation:
+  cvar_level: 0.05           # CVaR = mean P&L of the worst 5% of paths
+
+# Strategy 2: Monte Carlo Delta with Common Random Numbers
+mc_delta:
+  inner_paths: 5000          # M inner risk-neutral paths per rebalancing date (fresh each date)
+  bump_relative: 0.01        # forward difference [V(S+h) - V(S)] / h with h = 0.01 * S
+  random_seed: 7             # seed for the inner-path generator
